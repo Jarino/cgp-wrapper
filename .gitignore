@@ -3,4 +3,4 @@ __pycache__
 build
 *.dot
 *.so
-pycgp.c
+cgpwrapper.c

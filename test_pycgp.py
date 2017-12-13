@@ -1,7 +1,7 @@
 from sklearn import datasets
 from sklearn.model_selection import cross_val_score
 
-from pycgp import CGPClassifier
+from cgpwrapper import CGPClassifier
 
 
 

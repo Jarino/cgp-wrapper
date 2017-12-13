@@ -1,15 +1,11 @@
-cimport pycgp
-from libc.stdlib cimport malloc, free
-from collections import defaultdict
-import warnings
 cimport cython
-from cpython cimport array
-from cpython.ref cimport PyObject
-import array
-import numpy as np
+from libc.stdlib cimport malloc, free
 import math
 
 from sklearn.base import BaseEstimator, ClassifierMixin
+import numpy as np
+
+cimport cgpwrapper
 
 class BESingleton(BaseEstimator):
     __instance = None
@@ -57,7 +53,7 @@ cdef class CGPClassifier:
 
             ctarget[i] = y[i]
 
-        params = pycgp.initialiseParameters(numInputs, numNodes, numOutputs, nodeArity)
+        params = initialiseParameters(numInputs, numNodes, numOutputs, nodeArity)
 
         addNodeFunction(params, "add,sub,mul,div,sin")
 
@@ -85,7 +81,6 @@ cdef class CGPClassifier:
         return CMSingleton().score(X, y, sample_weight)
 
     def predict(self, X):
-
         # check whether we have only 1D vector or multiple vectors
         x_type = type(X[0])
 
