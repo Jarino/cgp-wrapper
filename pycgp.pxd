@@ -23,4 +23,7 @@ cdef extern from "cgp.h":
     void saveChromosomeDot(chromosome *chromo, int weights, char *fileName)
     dataSet *initialiseDataSetFromArrays(int numInputs, int numOutputs, int numSamples, double *inputs, double *outputs)
 
+    void executeChromosome(chromosome *chromo, double *inputs)
+    double getChromosomeOutput(chromosome *chromo, int output)
+
 
