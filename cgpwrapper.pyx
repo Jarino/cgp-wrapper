@@ -1,6 +1,5 @@
 cimport cython
 from libc.stdlib cimport malloc, free
-import math
 
 from sklearn.base import BaseEstimator, ClassifierMixin
 import numpy as np
@@ -25,45 +24,74 @@ class CMSingleton(ClassifierMixin):
 cdef class CGPClassifier:
 
     cdef chromosome *chromo
+    cdef int numInputs
+    cdef int numOutputs
+    cdef bytes funset
+    cdef int numNodes
+    cdef int nodeArity
+    cdef int numGens
+    cdef int updateFrequency
+    cdef double targetFitness
+
+    def __cinit__(self, **kwarg):
+        self.funset = kwarg.get('funset', 'add,sub,mul,div,sin').encode()
+        self.numNodes = kwarg.get('n_nodes', 15)
+        self.nodeArity = kwarg.get('n_arity', 2)
+        self.numGens = kwarg.get('n_gens', 10000)
+        self.updateFrequency = kwarg.get('update_freq', 500)
+        self.targetFitness = kwarg.get('target_fitness', 0.1)
+
+
+    def _get_instance_length(self, data):
+        data_type = type(data[0])
+        if data_type is list or data_type is np.ndarray:
+            return len(data[0])
+        else:
+            return 1 
 
     def fit(self, X, y):
         cdef parameters *params
         cdef dataSet *traningData
         cdef chromosome *chromo
 
-        cdef int numInputs = 4;
-        cdef int numNodes = 15;
-        cdef int numOutputs = 1;
-        cdef int nodeArity = 2;
+        self.numInputs = self._get_instance_length(X)
+        self.numOutputs = self._get_instance_length(y)
 
-        cdef int numGens = 10000;
-        cdef int updateFrequency = 500;
-        cdef double targetFitness = 0.1;
-
-        cdef double *cdata = <double *>malloc(len(X) * numInputs * cython.sizeof(double))
-        cdef double *ctarget = <double *>malloc(len(X) * cython.sizeof(double))
+        cdef double *cdata = <double *>malloc(len(X) * self.numInputs * cython.sizeof(double))
+        cdef double *ctarget = <double *>malloc(len(X) * self.numOutputs * cython.sizeof(double))
         cdef int numSamples = len(X)
 
         cdef int dataIndex = 0
+        cdef int targetIndex = 0
+
         for i in range(0, len(X)):
             
-            for j in range(0, numInputs):
-                cdata[dataIndex] = X[i][j]
+            for j in range(0, self.numInputs):
+                if isinstance(X[i], (list, np.ndarray)):
+                    cdata[dataIndex] = X[i][j]
+                else:
+                    cdata[dataIndex] = X[i]
                 dataIndex += 1
 
-            ctarget[i] = y[i]
+            for j in range(0, self.numOutputs):
+                if isinstance(y[i], (list, np.ndarray)):
+                    ctarget[targetIndex] = y[i][j] 
+                else:
+                    ctarget[targetIndex] = y[i]
+                targetIndex += 1
 
-        params = initialiseParameters(numInputs, numNodes, numOutputs, nodeArity)
 
-        addNodeFunction(params, "add,sub,mul,div,sin")
+        params = initialiseParameters(self.numInputs, self.numNodes, self.numOutputs, self.nodeArity)
+
+        addNodeFunction(params, self.funset)
 
         setTargetFitness(params, targetFitness)
 
-        setUpdateFrequency(params, updateFrequency)
+        setUpdateFrequency(params, self.updateFrequency)
         
-        trainingData = initialiseDataSetFromArrays(numInputs, numOutputs, numSamples, cdata, ctarget)
+        trainingData = initialiseDataSetFromArrays(self.numInputs, self.numOutputs, numSamples, cdata, ctarget)
 
-        self.chromo = runCGP(params, trainingData, numGens)
+        self.chromo = runCGP(params, trainingData, self.numGens)
 
         free(cdata)
         free(ctarget)
@@ -97,8 +125,9 @@ cdef class CGPClassifier:
                 inputs[i] = val
                 
             executeChromosome(self.chromo, inputs)
-            output = getChromosomeOutput(self.chromo, 0)
-            result.append(math.floor(output))
+            for i in range(0, self.numOutputs):
+                output = getChromosomeOutput(self.chromo, i)
+                result.append(np.floor(output))
         return result
 
 
