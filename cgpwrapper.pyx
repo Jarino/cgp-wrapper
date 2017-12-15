@@ -85,7 +85,7 @@ cdef class CGPClassifier:
 
         addNodeFunction(params, self.funset)
 
-        setTargetFitness(params, targetFitness)
+        setTargetFitness(params, self.targetFitness)
 
         setUpdateFrequency(params, self.updateFrequency)
         

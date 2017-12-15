@@ -3,3 +3,6 @@ cython:
 
 test:
 	pytest
+
+deploy_local:
+	pip install .
