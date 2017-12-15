@@ -18,6 +18,11 @@ Or directly:
 python setup.py build_ext --inplace
 ```
 
+Local deploy:
+```
+make deploy_local
+```
+
 ## Test
 
 Depends on [pytest](https://docs.pytest.org/en/latest/) library. To run test suite:
